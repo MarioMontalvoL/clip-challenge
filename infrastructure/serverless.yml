@@ -1,0 +1,37 @@
+service: clip-infra
+
+frameworkVersion: "=1.30.3"
+
+provider:
+  name: aws
+  stage: #enviroment
+  region: #region a desplegar
+  cfnRole: # Rol de cloudformation
+
+custom:
+  team_name: clip
+  stage: ${opt:env}
+  dev:
+    instance_type: t2.small
+    termination_protection: false
+    key_pair: key_pair
+    ami: ami-xxxxxxxxx
+    account_id: XXXXXXXXXXX
+    engine: mysql
+    engine_version: "13.6"
+    rds_instance_class: db.t3.medium
+    cidr: XXX.X.X.X/XX
+    public_subnet_1: XXX.X.X.X/XX
+    public_subnet_2: XXX.X.X.X/XX
+    public_destination_cidr_default: XXX.X.X.X/XX
+    private_subnet_1: XXX.X.X.X/XX
+    private_subnet_2: XXX.X.X.X/XX
+    private_destination_cidr_default: XXX.X.X.X/XX
+    private_destination_cidr_01: XXX.X.X.X/XX
+  stg: #variables de para entorno stg      
+  prd: #variables de para entorno stg
+
+
+resources:
+  - ${file(vpc.yml)}
+  - ${file(infra.yml)}

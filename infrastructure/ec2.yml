@@ -1,0 +1,34 @@
+
+Resources:
+
+  CIPLEC2INSTANCE:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: ${self:custom.${self:custom.stage}.instance_type}
+      ImageId: ${self:custom.${self:custom.stage}.ami}
+      IamInstanceProfile:
+        Fn::ImportValue: InstanceProfile
+      KeyName: key_pair
+      DisableApiTermination: True
+      SecurityGroupIds:
+      - Ref: CacheSecurityGroup
+      SubnetId:
+        Fn::ImportValue: PrivateSubnet1
+      UserData:
+        Fn::Base64: 
+          # Configuracion User data
+      Tags:
+        - Key: Name
+          Value: CIPLEC2INSTANCE
+
+  PostgresAuroraRDS:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      PubliclyAccessible: ${self:custom.config.default.rds_publicly_accessible}
+      Engine: ${self:custom.${self:custom.stage}.engine}
+      EngineVersion: ${self:custom.${self:custom.stage}.engine_version}
+      DBClusterIdentifier:
+       Ref: "DatabaseCluster"
+      DBInstanceClass: ${self:custom.${self:custom.stage}.rds_instance_class}
+      DBSubnetGroupName:
+       Ref: DBSubnetGroup

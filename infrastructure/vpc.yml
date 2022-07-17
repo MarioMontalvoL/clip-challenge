@@ -1,0 +1,179 @@
+---
+
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: ${self:custom.${self:custom.stage}.cidr}
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: ${self:custom.team_name}-vpc-${self:provider.stage}
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: ${self:custom.team_name}-vpc-${self:provider.stage}-ig
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Ref: InternetGateway
+      VpcId:
+        Ref: VPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone:
+        Fn::Select:
+        - 1
+        - Fn::GetAZs: ''
+      CidrBlock: ${self:custom.vpc.public_subnet_1}
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: ${self:custom.team_name}-public-subnet-1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone:
+        Fn::Select:
+        - 2
+        - Fn::GetAZs: ''
+      CidrBlock: ${self:custom.vpc.public_subnet_2}
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: ${self:custom.team_name}-public-subnet-2
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone:
+        Fn::Select:
+        - 1
+        - Fn::GetAZs: ''
+      CidrBlock: ${self:custom.vpc.private_subnet_1}
+      MapPublicIpOnLaunch: ${self:custom.net_type_definitions.${self:custom.net_type}.private_is_public}
+      Tags:
+      - Key: Name
+        Value: ${self:custom.team_name}-private-subnet-1
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: private-route-table-1
+
+  PrivateRouteT1R01:
+    Type: AWS::EC2::Route
+    DependsOn: TransitVPCGatewayAttachment
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable1
+      DestinationCidrBlock: ${self:custom.vpc.private_destination_cidr_01}
+      TransitGatewayId: ${self:custom.vpc.transit_gateway}
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable1
+      SubnetId:
+        Ref: PrivateSubnet1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone:
+        Fn::Select:
+        - 2
+        - Fn::GetAZs: ''
+      CidrBlock: ${self:custom.vpc.private_subnet_2}
+      MapPublicIpOnLaunch: ${self:custom.net_type_definitions.${self:custom.net_type}.private_is_public}
+      Tags:
+      - Key: Name
+        Value: ${self:custom.team_name}-private-subnet-2
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: private-route-table-2
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable2
+      SubnetId:
+        Ref: PrivateSubnet2
+
+  TransitVPCGatewayAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties:
+      SubnetIds:
+      - Ref: PrivateSubnet1
+      - Ref: PrivateSubnet2
+      Tags:
+      - Key: name
+        Value: ${self:custom.team_name}-vpc-${self:provider.stage}-vptg
+      TransitGatewayId: ${self:custom.vpc.transit_gateway}
+      VpcId:
+        Ref: VPC
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: ${self:custom.team_name}-public-route
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      DestinationCidrBlock: ${self:custom.vpc.public_destination_cidr_default}
+      GatewayId:
+        Ref: InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet2

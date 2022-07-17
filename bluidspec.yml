@@ -1,0 +1,15 @@
+---
+version: 0.2
+
+env:
+
+phases:
+  install:
+    commands:
+    - npm install -g serverless@1.31
+
+
+
+  build:
+    commands:
+    - (cd infrastructure && serverless deploy --force -v --env=${STAGE})
